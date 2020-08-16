@@ -1,0 +1,39 @@
+  .header1{
+      color: white;
+  }
+  .button {
+    border: none;
+    color: black;
+    padding: 16px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    width: 250px;
+  }
+
+  .button1 {
+    background-color: white;
+    color: black;
+    border: 2px solid #4CAF50;
+  }
+
+  .button1:hover {
+    background-color: #4CAF50;
+    color: white;
+  }
+
+  .button2 {
+    background-color: grey;
+    color: black;
+    border: 2px solid #008CBA;
+  }
+
+  .button2:hover {
+    background-color: #008CBA;
+    color: white;
+  }
+</style>
