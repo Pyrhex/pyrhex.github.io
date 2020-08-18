@@ -1,5 +1,14 @@
+  @font-face {
+  font-family: agave;
+  src: url(Agave-Regular.ttf);
+  }
   .header1{
+      font-family: agave;
       color: white;
+  }
+  .text{
+    font-family: agave;
+    color: white;
   }
   .button {
     border: none;
@@ -27,13 +36,17 @@
   }
 
   .button2 {
-    background-color: grey;
+    font-family: agave;
+
+    background-color: white;
     color: black;
-    border: 2px solid #008CBA;
+    border: 2px solid grey;
   }
 
   .button2:hover {
-    background-color: #008CBA;
+    font-family: agave;
+
+    background-color: grey;
     color: white;
   }
 </style>
