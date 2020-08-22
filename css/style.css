@@ -1,9 +1,9 @@
   @font-face {
   font-family: agave;
-  src: url(/fonts/Agave-Regular.ttf);
+  src: url(./css/fonts/Agave-Regular.ttf);
   }
   .header1{
-      font-family: impact;
+      font-family: agave;
       color: white;
   }
   .text{
