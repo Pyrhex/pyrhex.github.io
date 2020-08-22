@@ -21,7 +21,7 @@
     margin: 4px 2px;
     transition-duration: 0.4s;
     cursor: pointer;
-    width: 250px;
+    width: 230px;
   }
 
   .button1 {
@@ -45,7 +45,7 @@
 
   .button2:hover {
     font-family: agave;
-
+    transform: translateX(-50px);
     background-color: grey;
     color: white;
   }
