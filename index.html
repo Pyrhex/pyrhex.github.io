@@ -1,34 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <link rel="stylesheet" type="text/css" href="./css/style.css">
+	<title>Bootstrap Example</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="./css/style.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 </head>
 
-<body style="background-color:#292929;">
-  <center>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <h1 class=header1> Brian Lin </h1>
+<body style="height:1500px; background-color:#1a1a1a" >
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand agave" href="#">Brian Lin</a>
+			</div>
+			<ul class="nav navbar-nav">
+				<li class="agave"><a href="#">Home</a></li>
+				<li class="agave"><a href="#">GitHub</a></li>
+				<li class="agave"><a href="#">Contact</a></li>
+			</ul>
+		</div>
+	</nav>s
+
+	<div class="center agave text largeFont" style="margin-top:50px">
+		My name is Brian Lin. I'm a second year computer science student studying at Simon Fraser University.
+		I like working with C++ and Python and am currently looking for a co-op opportunity for the Spring 2021 Semester.
+	</div>	
 
 
-
-    <br>
-    <button class="button button2" onclick="window.location.href='https://github.com/Pyrhex';">GitHub</button>
-    <form method="get" action="resume.pdf">
-      <button class="button button2" type="submit">Resumé</button>
-    </form>
-    <button class="button button2" onclick="window.location.href='https://pyrhex.github.io/contact';">Contact </button>
-
-  </center>
-
-  <script src="script.js"> </script>
 </body>
 
 </html>
