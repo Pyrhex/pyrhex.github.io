@@ -6,11 +6,19 @@
   .agave{
 	  font-family: agave;
   }
-.center {
+.infotext {
   margin: 0;
   position: absolute;
   top: 40%;
-  left: 60%;
+  left: 55%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+.profilePic{
+  margin: 0;
+  position: absolute;
+  top: 45%;
+  left: 35%;
   -ms-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
 }
