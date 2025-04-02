@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brian Lin | Portfolio</title>
+  <title>Brian Lin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -47,6 +47,16 @@
     .nav-link:hover {
       color: #a1c4fd !important;
     }
+    .calendar-container {
+      background-color: #1f1f1f;
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+    .calendar-container iframe {
+      filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(1.2);
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
@@ -77,8 +87,10 @@
 
   <!-- Calendar Section -->
   <div id="calendar" class="container mt-5 text-center">
-    <h2 class="fw-bold mb-4">My Calendar</h2>
-    <iframe src="https://calendar.google.com/calendar/embed?src=24bc1af315ebd0c137d1172c5dba504e0f9bc6f6236d833b7c432b19c26dc909%40group.calendar.google.com&ctz=America%2FVancouver" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
+    <h2 class="fw-bold mb-4">Work Schedule</h2>
+    <div class="calendar-container">
+      <iframe src="https://calendar.google.com/calendar/embed?src=24bc1af315ebd0c137d1172c5dba504e0f9bc6f6236d833b7c432b19c26dc909%40group.calendar.google.com&ctz=America%2FVancouver&mode=AGENDA" style="border: 0; width: 800px; height: 600px; frameborder: 0; scrolling: no;"></iframe>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
