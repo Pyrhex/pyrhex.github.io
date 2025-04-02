@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brian Lin | Portfolio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #f4f4f4;
+    }
+    .profile-img {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 5px solid #444;
+    }
+    .btn-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+      color: white;
+      text-decoration: none;
+      transition: transform 0.3s ease;
+    }
+    .btn-circle:hover {
+      transform: scale(1.1);
+    }
+    .resume { background-color: #4caf50; }
+    .projects { background-color: #ff9800; }
+    .calendar { background-color: #03a9f4; }
+    .contact { background-color: #9e9e9e; }
+    .navbar {
+      background-color: #1f1f1f;
+    }
+    .navbar-brand, .nav-link {
+      color: #f4f4f4 !important;
+    }
+    .nav-link:hover {
+      color: #a1c4fd !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark shadow-sm">
+    <div class="container d-flex justify-content-end">
+      <a class="nav-link d-inline me-3" href="#resume">Resume</a>
+      <a class="nav-link d-inline me-3" href="#projects">Projects</a>
+      <a class="nav-link d-inline me-3" href="#calendar">Calendar</a>
+      <a class="nav-link d-inline" href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container text-center mt-5">
+    <img src="profile.png" alt="Brian Lin" class="profile-img mb-3">
+    <h1 class="fw-bold">Hello. My name is Brian Lin.</h1>
+    <p class="lead">I am a computer science student at Simon Fraser University looking for opportunities.</p>
+
+    <!-- Navigation Buttons -->
+    <div class="d-flex justify-content-center gap-3 mt-4">
+      <a href="#resume" class="btn btn-circle resume">Resume</a>
+      <a href="#projects" class="btn btn-circle projects">Projects</a>
+      <a href="#calendar" class="btn btn-circle calendar">Calendar</a>
+      <a href="#contact" class="btn btn-circle contact">Contact</a>
+    </div>
+  </div>
+
+  <!-- Calendar Section -->
+  <div id="calendar" class="container mt-5 text-center">
+    <h2 class="fw-bold mb-4">My Calendar</h2>
+    <iframe src="https://calendar.google.com/calendar/embed?src=24bc1af315ebd0c137d1172c5dba504e0f9bc6f6236d833b7c432b19c26dc909%40group.calendar.google.com&ctz=America%2FVancouver" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
