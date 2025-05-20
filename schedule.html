@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Schedule - Brian Lin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    body {
+      background-color: #121212;
+      color: #f4f4f4;
+    }
+
+    .navbar {
+      background-color: #1f1f1f;
+    }
+
+    .navbar-brand,
+    .nav-link {
+      color: #f4f4f4 !important;
+    }
+
+    .nav-link:hover {
+      color: #a1c4fd !important;
+    }
+
+    .calendar-container {
+      background-color: #1f1f1f;
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .calendar-container iframe {
+      filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(1.2);
+      border-radius: 10px;
+    }
+
+    .nav-tabs .nav-link {
+      background-color: transparent;
+      border: 1px solid #333;
+      color: #f4f4f4;
+    }
+
+    .nav-tabs .nav-link.active {
+      background-color: #2c2c2c;
+      color: #a1c4fd;
+      border-color: #444 #444 #1f1f1f;
+    }
+
+.nav-tabs {
+  border-bottom: 1px solid #444;
+}
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark shadow-sm">
+    <div class="container d-flex justify-content-between w-100">
+
+      <!-- Left nav links including Home -->
+      <div class="d-flex">
+        <a class="nav-link d-inline me-3" href="/">Home</a>
+        <a class="nav-link d-inline me-3" href="#resume">Resume</a>
+        <a class="nav-link d-inline me-3" href="#projects">Projects</a>
+        <a class="nav-link d-inline me-3" href="/schedule">Schedule</a>
+        <a class="nav-link d-inline me-3" href="#contact">Contact</a>
+        <a class="nav-link d-inline me-3" href="#upload">Upload</a>
+        <a class="nav-link d-inline me-3" href="https://media.realbrianlin.net" target="_blank">Media</a>
+      </div>
+
+      <!-- Right login/logout -->
+      <div>
+        {% if current_user.is_authenticated %}
+        <a class="nav-link d-inline" href="{{ url_for('logout') }}">Logout ({{ current_user.id }})</a>
+        {% else %}
+        <a class="nav-link d-inline" href="{{ url_for('login') }}">Login</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+<div class="container mt-5 text-center">
+  <h1 class="fw-bold">My Schedule</h1>
+  <p>This is where you can view your calendar events.</p>
+
+  <!-- Tabs Navigation -->
+  <ul class="nav nav-tabs justify-content-center mt-4" id="scheduleTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="frontdesk-tab" data-bs-toggle="tab" data-bs-target="#frontdesk" type="button" role="tab" aria-controls="frontdesk" aria-selected="true">
+        Front Desk
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab" aria-controls="personal" aria-selected="false">
+        Personal
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tabs Content -->
+  <div class="tab-content mt-3" id="scheduleTabsContent">
+    <!-- Front Desk Calendar -->
+    <div class="tab-pane fade show active" id="frontdesk" role="tabpanel" aria-labelledby="frontdesk-tab">
+      <div class="calendar-container mt-4 mx-auto">
+        <iframe
+          src="https://calendar.google.com/calendar/embed?src=24bc1af315ebd0c137d1172c5dba504e0f9bc6f6236d833b7c432b19c26dc909%40group.calendar.google.com&ctz=America%2FVancouver&mode=AGENDA"
+          style="border: 0" width="800" height="600" frameborder="0" scrolling="no">
+        </iframe>
+      </div>
+    </div>
+
+    <!-- Personal Calendar -->
+    <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+      <div class="calendar-container mt-4 mx-auto">
+        <iframe
+          src="https://calendar.google.com/calendar/embed?src=personal.brian.lin%40gmail.com&ctz=America%2FVancouver"
+          style="border: 0" width="800" height="600" frameborder="0" scrolling="no">
+        </iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+  {% if current_user.is_authenticated %}
+  <!-- Upload Excel Section (Only visible if authenticated) -->
+  <div class="container mt-5 text-center">
+    <div id="upload" class="mt-5">
+      <h2 class="fw-bold mb-4">Upload Excel File</h2>
+      <form action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="excel" accept=".xlsx,.xls" class="form-control mb-3"
+          style="max-width: 400px; margin: 0 auto;">
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
