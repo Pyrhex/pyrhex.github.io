@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 10px; }
+        #messages { list-style-type: none; padding: 0; }
+        #messages li { padding: 5px 10px; border: 1px solid #ddd; margin-bottom: 5px; }
+        input { padding: 10px; width: 80%; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Chat Room</h2>
+    <ul id="messages"></ul>
+    <input id="message_input" type="text" placeholder="Type a message..." autocomplete="off">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        var socket = io();
+
+        // Receive a message from the server
+        socket.on('message', function(msg) {
+            const li = document.createElement('li');
+            li.textContent = msg;
+            document.getElementById('messages').appendChild(li);
+        });
+
+        // Send message to server
+        function sendMessage() {
+            var message = document.getElementById('message_input').value;
+            if (message) {
+                socket.send(message);
+                document.getElementById('message_input').value = ''; // Clear input field
+            }
+        }
+    </script>
+</body>
+</html>

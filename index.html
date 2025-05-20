@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
       background-color: #121212;
       color: #f4f4f4;
     }
+
     .profile-img {
       width: 200px;
       height: 200px;
@@ -18,6 +20,7 @@
       border-radius: 50%;
       border: 5px solid #444;
     }
+
     .btn-circle {
       width: 120px;
       height: 120px;
@@ -32,80 +35,143 @@
       text-decoration: none;
       transition: transform 0.3s ease;
     }
+
     .btn-circle:hover {
       transform: scale(1.1);
     }
-    .resume { background-color: #4caf50; }
-    .projects { background-color: #ff9800; }
-    .calendar { background-color: #03a9f4; }
-    .contact { background-color: #9e9e9e; }
+
+    .resume {
+      background-color: #4caf50;
+    }
+
+    .projects {
+      background-color: #ff9800;
+    }
+
+    .calendar {
+      background-color: #03a9f4;
+    }
+
+    .contact {
+      background-color: #9e9e9e;
+    }
+
     .navbar {
       background-color: #1f1f1f;
     }
-    .navbar-brand, .nav-link {
+
+    .navbar-brand,
+    .nav-link {
       color: #f4f4f4 !important;
     }
+
     .nav-link:hover {
       color: #a1c4fd !important;
     }
-    .calendar-container {
-      background-color: #1f1f1f;
-      padding: 20px;
-      border-radius: 10px;
-      display: inline-block;
+
+    .section-divider {
+      border-top: 1px solid #444;
+      margin: 60px 0;
     }
-    .calendar-container iframe {
-      filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(1.2);
-      border-radius: 10px;
+
+    .skills-icons i {
+      font-size: 2rem;
+      margin: 0 15px;
+      color: #a1c4fd;
     }
   </style>
 </head>
+
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-dark shadow-sm">
-    <div class="container d-flex justify-content-end">
-      <a class="nav-link d-inline me-3" href="#resume">Resume</a>
-      <a class="nav-link d-inline me-3" href="#projects">Projects</a>
-      <a class="nav-link d-inline me-3" href="#calendar">Calendar</a>
-      <a class="nav-link d-inline me-3" href="#contact">Contact</a>
-      <a class="nav-link d-inline" href="https://media.realbrianlin.net" target="_blank">Media</a>
+    <div class="container d-flex justify-content-between w-100">
+      <div class="d-flex">
+        <a class="nav-link d-inline me-3" href="/">Home</a>
+        <a class="nav-link d-inline me-3" href="#about">About</a>
+        <a class="nav-link d-inline me-3" href="#skills">Skills</a>
+        <a class="nav-link d-inline me-3" href="#resume">Resume</a>
+        <a class="nav-link d-inline me-3" href="#projects">Projects</a>
+        <a class="nav-link d-inline me-3" href="/schedule">Schedule</a>
+        <a class="nav-link d-inline me-3" href="#contact">Contact</a>
+        <a class="nav-link d-inline me-3" href="https://media.realbrianlin.net" target="_blank">Media</a>
+      </div>
+      <div>
+        {% if current_user.is_authenticated %}
+        <a class="nav-link d-inline" href="{{ url_for('logout') }}">Logout ({{ current_user.id }})</a>
+        {% else %}
+        <a class="nav-link d-inline" href="{{ url_for('login') }}">Login</a>
+        {% endif %}
+      </div>
     </div>
   </nav>
 
-  <!-- Main Content -->
+  <!-- Hero Section -->
   <div class="container text-center mt-5">
-    <img src="profile.png" alt="Brian Lin" class="profile-img mb-3">
-    <h1 class="fw-bold">Hello. My name is Brian Lin.</h1>
-    <p class="lead">I am a computer science student at Simon Fraser University looking for opportunities.</p>
+    <img src="/static/images/profile.png" alt="Brian Lin" class="profile-img mb-3">
+    <h1 class="fw-bold">Hello, I'm Brian Lin.</h1>
+    <p class="lead">A computer science student at Simon Fraser University passionate about tech and solving problems
+      through code.</p>
+  </div>
 
-    <!-- Navigation Buttons -->
-    <div class="d-flex justify-content-center gap-3 mt-4">
-      <a href="#resume" class="btn btn-circle resume">Resume</a>
-      <a href="#projects" class="btn btn-circle projects">Projects</a>
-      <a href="#calendar" class="btn btn-circle calendar">Calendar</a>
-      <a href="#contact" class="btn btn-circle contact">Contact</a>
+  <!-- About Me -->
+  <div id="about" class="container text-center mt-5">
+    <h2 class="fw-bold mb-3">About Me</h2>
+    <p class="lead">I'm currently in the Computer Science program at SFU. I enjoy creating software that makes life
+      easier, whether it’s web apps, automation scripts, or anything in between. Outside of code, I love learning new
+      tech, listening to music, and exploring how things work under the hood.</p>
+  </div>
+
+  <!-- Skills -->
+  <div id="skills" class="container text-center mt-5">
+    <h2 class="fw-bold mb-3">Skills</h2>
+    <div class="skills-icons d-flex justify-content-center flex-wrap mt-3">
+      <div class="p-3"><i class="bi bi-terminal"></i>
+        <p>Python</p>
+      </div>
+      <div class="p-3"><i class="bi bi-braces"></i>
+        <p>JavaScript</p>
+      </div>
+      <div class="p-3"><i class="bi bi-filetype-html"></i>
+        <p>HTML/CSS</p>
+      </div>
+      <div class="p-3"><i class="bi bi-server"></i>
+        <p>Flask</p>
+      </div>
+      <div class="p-3"><i class="bi bi-git"></i>
+        <p>Git</p>
+      </div>
+      <div class="p-3"><i class="bi bi-database"></i>
+        <p>SQL</p>
+      </div>
     </div>
   </div>
 
-  <!-- Calendar Section -->
-  <div id="calendar" class="container mt-5 text-center">
-    <h2 class="fw-bold mb-4">Work Schedule</h2>
-    <div class="calendar-container">
-      <iframe src="https://calendar.google.com/calendar/embed?src=24bc1af315ebd0c137d1172c5dba504e0f9bc6f6236d833b7c432b19c26dc909%40group.calendar.google.com&ctz=America%2FVancouver&mode=AGENDA" style="border: 0; width: 800px; height: 600px; frameborder: 0; scrolling: no;"></iframe>
-    </div>
+  <!-- Resume / Projects Buttons -->
+  <div class="d-flex justify-content-center gap-3 mt-5">
+    <a href="#resume" class="btn btn-circle resume">Resume</a>
+    <a href="#projects" class="btn btn-circle projects">Projects</a>
+    <a href="#contact" class="btn btn-circle contact">Contact</a>
   </div>
 
-  <!-- Contact Section -->
-  <div id="contact" class="container mt-5 mb-5 text-center">
-    <h2 class="fw-bold mb-4">Contact Me</h2>
-    <p>Feel free to reach out or connect with me on social media:</p>
-    <div class="d-flex justify-content-center gap-4">
-      <a href="https://www.linkedin.com/in/brian-lin-a789bb271/" target="_blank" class="text-light fs-2" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
-      <a href="https://github.com/Pyrhex" target="_blank" class="text-light fs-2" aria-label="GitHub"><i class="bi bi-github"></i></a>
-      <a href="mailto:business@realbrianlin.net" class="text-light fs-2" aria-label="Email"><i class="bi bi-envelope-fill"></i></a>
+  <!-- Footer Contact -->
+  <footer id="contact" class="mt-5 py-4 bg-dark text-center text-light">
+    <div class="container">
+      <h5 class="fw-bold mb-3">Contact Me</h5>
+      <p>Feel free to reach out or connect with me on social media:</p>
+      <div class="d-flex justify-content-center gap-4 mb-3">
+        <a href="https://www.linkedin.com/in/brian-lin-a789bb271/" target="_blank" class="text-light fs-3"
+          aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        <a href="https://github.com/Pyrhex" target="_blank" class="text-light fs-3" aria-label="GitHub"><i
+            class="bi bi-github"></i></a>
+        <a href="mailto:business@realbrianlin.net" class="text-light fs-3" aria-label="Email"><i
+            class="bi bi-envelope-fill"></i></a>
+      </div>
+      <small>&copy; {{ now.year if now else "2025" }} Brian Lin. All rights reserved.</small>
     </div>
-  </div>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
