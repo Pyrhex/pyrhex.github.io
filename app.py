@@ -239,15 +239,22 @@ def upload_invoice():
     timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
     original_filename = file.filename
     safe_name = secure_filename(original_filename)
-    stored_filename = f"{timestamp}_{safe_name}"
-    target_path = app.config['INVOICE_UPLOAD_FOLDER'] / stored_filename
+    extension = Path(safe_name).suffix.lower()
+    if not extension:
+        flash('Invoice must have a valid file extension.', 'warning')
+        return redirect(url_for('invoices'))
+
+    temp_filename = f"pending_{timestamp}{extension}"
+    temp_path = app.config['INVOICE_UPLOAD_FOLDER'] / temp_filename
 
     try:
-        file.save(target_path)
+        file.save(temp_path)
     except Exception as e:
         print(f"Error saving invoice file: {e}")
         flash('Could not save the uploaded invoice.', 'danger')
         return redirect(url_for('invoices'))
+
+    final_path = None
 
     try:
         connection = get_db_connection()
@@ -255,7 +262,26 @@ def upload_invoice():
             cursor = connection.cursor()
             cursor.execute(
                 "INSERT INTO invoices (original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s)",
-                (original_filename, stored_filename, current_user.id, datetime.utcnow(), paid)
+                (original_filename, temp_filename, current_user.id, datetime.utcnow(), paid)
+            )
+            invoice_id = cursor.lastrowid
+            final_filename = f"invoice_{invoice_id}{extension}"
+            final_path = app.config['INVOICE_UPLOAD_FOLDER'] / final_filename
+
+            try:
+                temp_path.rename(final_path)
+            except Exception as rename_error:
+                connection.rollback()
+                cursor.close()
+                connection.close()
+                print(f"Error finalizing invoice file name: {rename_error}")
+                temp_path.unlink(missing_ok=True)
+                flash('Could not finalize the invoice upload.', 'danger')
+                return redirect(url_for('invoices'))
+
+            cursor.execute(
+                "UPDATE invoices SET stored_filename = %s WHERE id = %s",
+                (final_filename, invoice_id)
             )
             connection.commit()
             cursor.close()
@@ -263,7 +289,13 @@ def upload_invoice():
         flash('Invoice uploaded.', 'success')
     except Error as e:
         print(f"Error saving invoice metadata: {e}")
-        target_path.unlink(missing_ok=True)
+        if 'connection' in locals() and connection.is_connected():
+            connection.rollback()
+            connection.close()
+        if final_path:
+            final_path.unlink(missing_ok=True)
+        else:
+            temp_path.unlink(missing_ok=True)
         flash('Could not record the invoice in the database.', 'danger')
 
     return redirect(url_for('invoices'))
