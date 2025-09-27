@@ -125,7 +125,7 @@
                 <tr>
                   <td>
                     <a href="{{ url_for('static', filename='invoices/' ~ invoice.stored_filename) }}" class="link-light"
-                      target="_blank" rel="noopener">{{ invoice.original_filename }}</a>
+                      target="_blank" rel="noopener">Invoice #{{ invoice.id }}</a>
                   </td>
                   <td>{{ invoice.uploaded_by or '—' }}</td>
                   <td>{{ invoice.upload_date.strftime('%b %d, %Y %I:%M %p') if invoice.upload_date else '—' }}</td>
