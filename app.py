@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from googleapiclient.errors import HttpError
 import re
@@ -17,11 +17,60 @@ from google_cal import upload_schedule
 from ModMeal import _process_excel_to_rows
 import tempfile
 from pathlib import Path
+from werkzeug.utils import secure_filename
 app = Flask(__name__, template_folder='.', static_folder='static')
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 REDIRECT_URI = "https://realbrianlin.net/oauth2callback"
 app.secret_key = 'supersecretkey'  # Needed for session management
+app.config['INVOICE_UPLOAD_FOLDER'] = Path(app.static_folder) / "invoices"
+app.config['ALLOWED_INVOICE_EXTENSIONS'] = {"pdf", "png", "jpg", "jpeg", "doc", "docx"}
+
+
+def ensure_invoice_storage():
+    app.config['INVOICE_UPLOAD_FOLDER'].mkdir(parents=True, exist_ok=True)
+
+
+def get_db_connection():
+    return mysql.connector.connect(
+        host=os.environ.get('DB_HOST'),
+        database='website',
+        user=os.environ.get('DB_USER'),
+        password=os.environ.get('DB_PASSWORD')
+    )
+
+
+def ensure_invoices_table():
+    try:
+        connection = get_db_connection()
+        if connection.is_connected():
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS invoices (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    original_filename VARCHAR(255) NOT NULL,
+                    stored_filename VARCHAR(255) NOT NULL,
+                    uploaded_by VARCHAR(255),
+                    upload_date DATETIME NOT NULL,
+                    paid TINYINT(1) DEFAULT 0
+                )
+                """
+            )
+            connection.commit()
+            cursor.close()
+        connection.close()
+    except Error as e:
+        print(f"Error ensuring invoices table: {e}")
+
+
+def allowed_invoice_file(filename: str) -> bool:
+    if not filename or "." not in filename:
+        return False
+    return filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_INVOICE_EXTENSIONS']
+
+
+ensure_invoice_storage()
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -119,12 +168,12 @@ def login():
                     cursor.close()
                     connection.close()
                     return redirect(url_for('index'))
-                else:
-                    cursor.close()
-                    connection.close()
-                    return "Invalid credentials"
+                cursor.close()
+                connection.close()
         except Error as e:
             print(f"Error: {e}")
+
+        return "Invalid credentials"
 
         # if username == "brian" and password == "123":
         #     login_user(User("brian"))
@@ -142,6 +191,109 @@ def schedule():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+
+@app.route('/invoices')
+@login_required
+def invoices():
+    ensure_invoices_table()
+    invoices = []
+    try:
+        connection = get_db_connection()
+        if connection.is_connected():
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT id, original_filename, stored_filename, uploaded_by, upload_date, paid FROM invoices ORDER BY upload_date DESC"
+            )
+            invoices = cursor.fetchall()
+            cursor.close()
+        connection.close()
+    except Error as e:
+        print(f"Error fetching invoices: {e}")
+        flash('Unable to load invoices right now.', 'danger')
+
+    return render_template('invoices.html', invoices=invoices)
+
+
+@app.route('/invoices/upload', methods=['POST'])
+@login_required
+def upload_invoice():
+    ensure_invoices_table()
+    file = request.files.get('invoice_file')
+    paid_status = request.form.get('paid_status', 'unpaid')
+    paid = 1 if paid_status == 'paid' else 0
+
+    if not file or file.filename == '':
+        flash('Please choose an invoice to upload.', 'warning')
+        return redirect(url_for('invoices'))
+
+    if not allowed_invoice_file(file.filename):
+        allowed = ", ".join(sorted(app.config['ALLOWED_INVOICE_EXTENSIONS']))
+        flash(f'Unsupported file type. Allowed: {allowed}', 'warning')
+        return redirect(url_for('invoices'))
+
+    timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
+    original_filename = file.filename
+    safe_name = secure_filename(original_filename)
+    stored_filename = f"{timestamp}_{safe_name}"
+    target_path = app.config['INVOICE_UPLOAD_FOLDER'] / stored_filename
+
+    try:
+        file.save(target_path)
+    except Exception as e:
+        print(f"Error saving invoice file: {e}")
+        flash('Could not save the uploaded invoice.', 'danger')
+        return redirect(url_for('invoices'))
+
+    try:
+        connection = get_db_connection()
+        if connection.is_connected():
+            cursor = connection.cursor()
+            cursor.execute(
+                "INSERT INTO invoices (original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s)",
+                (original_filename, stored_filename, current_user.id, datetime.utcnow(), paid)
+            )
+            connection.commit()
+            cursor.close()
+        connection.close()
+        flash('Invoice uploaded.', 'success')
+    except Error as e:
+        print(f"Error saving invoice metadata: {e}")
+        target_path.unlink(missing_ok=True)
+        flash('Could not record the invoice in the database.', 'danger')
+
+    return redirect(url_for('invoices'))
+
+
+@app.route('/invoices/<int:invoice_id>/status', methods=['POST'])
+@login_required
+def update_invoice_status(invoice_id: int):
+    ensure_invoices_table()
+    new_status = request.form.get('paid_status')
+    if new_status not in {'paid', 'unpaid'}:
+        flash('Invalid status.', 'warning')
+        return redirect(url_for('invoices'))
+
+    paid = 1 if new_status == 'paid' else 0
+
+    try:
+        connection = get_db_connection()
+        if connection.is_connected():
+            cursor = connection.cursor()
+            cursor.execute(
+                "UPDATE invoices SET paid = %s WHERE id = %s",
+                (paid, invoice_id)
+            )
+            connection.commit()
+            cursor.close()
+        connection.close()
+        flash('Invoice status updated.', 'success')
+    except Error as e:
+        print(f"Error updating invoice status: {e}")
+        flash('Could not update invoice status.', 'danger')
+
+    return redirect(url_for('invoices'))
+
 
 @app.route('/upload', methods=['POST'])
 @login_required
