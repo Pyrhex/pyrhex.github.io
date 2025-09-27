@@ -148,6 +148,11 @@
                       <button type="submit" class="btn btn-outline-success btn-sm">Mark Paid</button>
                       {% endif %}
                     </form>
+                    <form class="d-inline ms-2" method="post"
+                      action="{{ url_for('delete_invoice', invoice_id=invoice.id) }}"
+                      onsubmit="return confirm('Delete this invoice?');">
+                      <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                    </form>
                   </td>
                   {% endif %}
                 </tr>

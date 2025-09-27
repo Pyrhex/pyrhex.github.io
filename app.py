@@ -253,10 +253,10 @@ def upload_invoice():
         connection = get_db_connection()
         if connection.is_connected():
             cursor = connection.cursor()
-            cursor.execute(
-                "INSERT INTO invoices (original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s)",
-                (original_filename, stored_filename, current_user.id, datetime.utcnow(), paid)
-            )
+                    cursor.execute(
+                        "INSERT INTO invoices (original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s)",
+                        (original_filename, stored_filename, current_user.id, datetime.utcnow(), paid)
+                    )
             connection.commit()
             cursor.close()
         connection.close()
@@ -298,6 +298,46 @@ def update_invoice_status(invoice_id: int):
         print(f"Error updating invoice status: {e}")
         flash('Could not update invoice status.', 'danger')
 
+    return redirect(url_for('invoices'))
+
+
+@app.route('/invoices/<int:invoice_id>/delete', methods=['POST'])
+@login_required
+def delete_invoice(invoice_id: int):
+    if not getattr(current_user, 'is_admin', False):
+        flash('Admin privileges required.', 'danger')
+        return redirect(url_for('invoices'))
+
+    ensure_invoices_table()
+    stored_filename = None
+    try:
+        connection = get_db_connection()
+        if connection.is_connected():
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT stored_filename FROM invoices WHERE id = %s",
+                (invoice_id,)
+            )
+            record = cursor.fetchone()
+            if record:
+                stored_filename = record['stored_filename']
+                cursor.execute("DELETE FROM invoices WHERE id = %s", (invoice_id,))
+                connection.commit()
+            cursor.close()
+        connection.close()
+    except Error as e:
+        print(f"Error deleting invoice: {e}")
+        flash('Could not delete invoice.', 'danger')
+        return redirect(url_for('invoices'))
+
+    if stored_filename:
+        file_path = app.config['INVOICE_UPLOAD_FOLDER'] / stored_filename
+        try:
+            file_path.unlink(missing_ok=True)
+        except Exception as e:
+            print(f"Error deleting invoice file: {e}")
+
+    flash('Invoice deleted.', 'success')
     return redirect(url_for('invoices'))
 
 
@@ -353,7 +393,8 @@ def register():
                 return redirect(url_for('login'))
         except Error as e:
             print(f"Error: {e}")
-        return redirect(url_for('login'))
+        flash('Registration failed. Please try again.', 'danger')
+        return redirect(url_for('register'))
 
     return render_template('register.html')
 @app.route('/manager_meals', methods=['GET', 'POST'])
