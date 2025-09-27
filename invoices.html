@@ -79,6 +79,7 @@
       {% endif %}
       {% endwith %}
 
+      {% if current_user.is_authenticated and current_user.is_admin %}
       <div class="card mb-4">
         <div class="card-body">
           <h5 class="card-title mb-3">Upload Invoice</h5>
@@ -100,6 +101,7 @@
           </form>
         </div>
       </div>
+      {% endif %}
 
       <div class="card">
         <div class="card-body">
@@ -113,7 +115,9 @@
                   <th scope="col">Uploaded By</th>
                   <th scope="col">Uploaded At</th>
                   <th scope="col">Status</th>
+                  {% if current_user.is_authenticated and current_user.is_admin %}
                   <th scope="col" class="text-end">Actions</th>
+                  {% endif %}
                 </tr>
               </thead>
               <tbody>
@@ -132,6 +136,7 @@
                     <span class="badge bg-danger">Unpaid</span>
                     {% endif %}
                   </td>
+                  {% if current_user.is_authenticated and current_user.is_admin %}
                   <td class="text-end">
                     <form class="d-inline" method="post"
                       action="{{ url_for('update_invoice_status', invoice_id=invoice.id) }}">
@@ -144,6 +149,7 @@
                       {% endif %}
                     </form>
                   </td>
+                  {% endif %}
                 </tr>
                 {% endfor %}
               </tbody>

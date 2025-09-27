@@ -116,8 +116,9 @@ names = ["Brian*", "Abdi*", "Emilyn*", "Ryan*", "Jordan", "Cindy*", "KC*", "Jojo
     
 # User class
 class User(UserMixin):
-    def __init__(self, username):
+    def __init__(self, username, is_admin=False):
         self.id = username
+        self.is_admin = is_admin
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -135,7 +136,7 @@ def load_user(user_id):
             cursor.close()
             connection.close()
             if user:
-                return User(user_id)
+                return User(user_id, bool(user.get('is_admin', 0)))
     except Error as e:
         print(f"Error: {e}")
     # if user_id == "brian":
@@ -164,7 +165,7 @@ def login():
                 cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
                 user = cursor.fetchone()
                 if user and check_password(user['password'], password):
-                    login_user(User(username))
+                    login_user(User(username, bool(user.get('is_admin', 0))))
                     cursor.close()
                     connection.close()
                     return redirect(url_for('index'))
@@ -173,7 +174,7 @@ def login():
         except Error as e:
             print(f"Error: {e}")
 
-        return "Invalid credentials"
+        flash('Invalid credentials', 'danger')
 
         # if username == "brian" and password == "123":
         #     login_user(User("brian"))
@@ -218,6 +219,9 @@ def invoices():
 @app.route('/invoices/upload', methods=['POST'])
 @login_required
 def upload_invoice():
+    if not getattr(current_user, 'is_admin', False):
+        flash('Admin privileges required.', 'danger')
+        return redirect(url_for('invoices'))
     ensure_invoices_table()
     file = request.files.get('invoice_file')
     paid_status = request.form.get('paid_status', 'unpaid')
@@ -264,10 +268,12 @@ def upload_invoice():
 
     return redirect(url_for('invoices'))
 
-
 @app.route('/invoices/<int:invoice_id>/status', methods=['POST'])
 @login_required
 def update_invoice_status(invoice_id: int):
+    if not getattr(current_user, 'is_admin', False):
+        flash('Admin privileges required.', 'danger')
+        return redirect(url_for('invoices'))
     ensure_invoices_table()
     new_status = request.form.get('paid_status')
     if new_status not in {'paid', 'unpaid'}:
