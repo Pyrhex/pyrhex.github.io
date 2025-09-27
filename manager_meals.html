@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manager Meal List</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #111737;
+      --panel-2: #0e1430;
+      --text: #e8ecff;
+      --muted: #9aa4c7;
+      --accent: #6aa3ff;
+      --accent-2: #8fd6ff;
+      --border: #1b224a;
+      --success: #35c77a;
+      --danger: #ff5d6c;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+      --radius: 14px;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f8ff;
+        --panel: #ffffff;
+        --panel-2: #f3f6ff;
+        --text: #0b1020;
+        --muted: #55607a;
+        --accent: #2b6eff;
+        --accent-2: #00a4ff;
+        --border: #e6e9f5;
+        --success: #168f58;
+        --danger: #c93847;
+        --shadow: 0 10px 30px rgba(25, 45, 85, .12);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 600px at -10% -10%, rgba(106, 163, 255, .25), transparent 60%),
+        radial-gradient(900px 500px at 110% 0%, rgba(143, 214, 255, .18), transparent 55%),
+        radial-gradient(800px 400px at 50% 120%, rgba(106, 163, 255, .12), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.55 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      padding: 28px 18px 40px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: var(--shadow);
+      color: white;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+
+    .sub {
+      margin: 4px 0 18px;
+      color: var(--muted);
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .uploader {
+      display: grid;
+      gap: 12px;
+    }
+
+    .dropzone {
+      position: relative;
+      border: 1.5px dashed var(--border);
+      background: rgba(255, 255, 255, .02);
+      border-radius: calc(var(--radius) - 4px);
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      transition: border-color .15s, background .15s;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(106, 163, 255, .08);
+    }
+
+    .dz-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .dz-hint {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    input[type=file] {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .03);
+      color: var(--text);
+      max-width: 100%;
+    }
+
+    button.primary {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform .06s ease;
+    }
+
+    button.primary:active {
+      transform: translateY(1px);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .alert {
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin: 10px 0 0;
+    }
+
+    .alert.error {
+      background: rgba(255, 93, 108, .12);
+      color: var(--danger);
+      border: 1px solid rgba(255, 93, 108, .35);
+    }
+
+    .alert.ok {
+      background: rgba(53, 199, 122, .12);
+      color: var(--success);
+      border: 1px solid rgba(53, 199, 122, .35);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: calc(var(--radius) - 4px);
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+      background: rgba(255, 255, 255, .02);
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      text-align: left;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .3px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, .45);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin-left: 8px;
+    }
+
+    .loading .spinner {
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">MM</div>
+      <div>
+        <h1>Manager Meal List</h1>
+        <div class="sub">Upload your weekly <span class="mono">.xlsx</span>. Output order: <b>10pm–2am</b>,
+          <b>6am–2pm</b> (AM overridden to <b>Jojo</b> when she’s listed in Managers), then <b>2pm–10pm</b>.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <form class="uploader" method="POST" action="{{ url_for('manager_meals') }}" enctype="multipart/form-data"
+        id="upload-form">
+        <div class="dropzone" id="dropzone">
+          <div>
+            <div class="dz-title">Drop your Excel here</div>
+            <div class="dz-hint">…or click below to choose a file</div>
+          </div>
+        </div>
+        <div class="controls">
+          <input type="file" name="file" id="file-input" accept=".xlsx" required>
+          <div>
+            <button class="primary" type="submit" id="submit-btn">Generate<span class="spinner"
+                id="spinner"></span></button>
+            <span class="note">Supports .xlsx (OpenPyXL)</span>
+          </div>
+        </div>
+        {% if error %}
+        <div class="alert error">{{ error }}</div>
+        {% endif %}
+      </form>
+    </div>
+
+    {% if rows %}
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 160px;">Date</th>
+              <th>Managers (Night, AM, PM)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for date_str, names in rows %}
+            <tr>
+              <td><span class="mono">{{ date_str }}</span></td>
+              <td>{{ names }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="alert ok">{{ rows|length }} day(s) listed.</div>
+    </div>
+    {% endif %}
+
+    <div class="footer">Tip: If your sheet structure changes, tweak parsing in <span class="mono">ModMeal.py</span>.
+    </div>
+  </div>
+
+  <script>
+    const dz = document.getElementById('dropzone');
+    const form = document.getElementById('upload-form');
+    const fileInput = document.getElementById('file-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const setLoading = (on) => {
+      if (on) { submitBtn.classList.add('loading'); submitBtn.disabled = true; }
+      else { submitBtn.classList.remove('loading'); submitBtn.disabled = false; }
+    };
+    ['dragenter', 'dragover'].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.remove('dragover'); }));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      const files = e.dataTransfer.files;
+      if (files && files.length) {
+        fileInput.files = files;
+        form.submit();
+      }
+    });
+    form.addEventListener('submit', () => setLoading(true));
+  </script>
+</body>
+
+</html>

@@ -14,6 +14,9 @@ from googleapiclient.discovery import build
 import pytz
 from google_auth_oauthlib.flow import Flow
 from google_cal import upload_schedule
+from ModMeal import _process_excel_to_rows
+import tempfile
+from pathlib import Path
 app = Flask(__name__, template_folder='.', static_folder='static')
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
@@ -195,7 +198,24 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html')
+@app.route('/manager_meals', methods=['GET', 'POST'])
+def manager_meals():
+    rows, error = None, None
+    if request.method == 'POST':
+        f = request.files.get("file")
+        if not f or f.filename == "":
+            error = "Please choose an .xlsx file."
+        else:
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                    f.save(tmp.name)
+                    tmp_path = Path(tmp.name)
+                rows = _process_excel_to_rows(tmp_path)
+                os.unlink(tmp_path)
+            except Exception as e:
+                error = f"Error processing file: {e}"
 
+    return render_template("manager_meals.html", rows=rows, error=error)
 # Start the Flask app if run directly
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

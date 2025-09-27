@@ -11,26 +11,33 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 vancouver_tz = pytz.timezone('America/Vancouver')
-names = ["Brian*", "Abdi*", "Emilyn*", "Ryan*", "Jordan", "Cindy*", "KC*", "Jojo*", "Christian*", "Troy*", "Tristan*", "Ian", "Sara"]
+names = ["Brian", "Abdi*", "Emilyn*", "Ryan*", "Jordan", "Cindy*", "KC", "Jojo*", "Christian*", "Troy*", "Tristan*", "Ian", "Sara", "Terry"]
 color_codes = {
-    "Brian*": 1,
+    "Brian": 1,
     "Abdi*": 2,
     "Emilyn*": 10,
     "Ryan*": 4,
     "Jordan": 5, 
     "Cindy*": 6,
-    "KC*": 7,
+    "KC": 7,
     "Jojo*": 8,
     "Christian*": 9,
     "Troy*": 3,
     "Tristan*": 11,
     "Ian": 1,
     "Work": 6,
-    "Sara": 1
+    "Sara": 1,
+    "Terry": 5
 }
 
 def remove_end_star(name: str) -> str:
     return name[:-1] if name.endswith('*') else name
+
+def normalize_name(s: str) -> str:
+    """Lowercase, strip, and remove a trailing asterisk for robust comparisons."""
+    if s is None:
+        return ""
+    return remove_end_star(str(s).strip()).lower()
 
 def convert_to_24_hour(time_str):
     time_str = time_str.strip()
@@ -124,7 +131,7 @@ def upload_to_google_calendar(event_times, name):
             'location': '9351 Bridgeport Rd, Richmond, BC V6X 1S3',
             'start': {'dateTime': event_start_time.isoformat(), 'timeZone': 'America/Vancouver'},
             'end': {'dateTime': event_end_time.isoformat(), 'timeZone': 'America/Vancouver'},
-            'colorId': color_codes.get(name, 1)
+            'colorId': color_codes.get(name, color_codes.get(clean_name, 1))
         }
 
         if (clean_name, event_start_time, event_end_time) not in existing_event_keys:
@@ -173,7 +180,7 @@ def upload_schedule(response):
         tasks = []
 
         for name in names:
-            row = sched[sched['Name'].str.strip().str.lower() == name.lower()]
+            row = sched[sched['Name'].apply(normalize_name) == normalize_name(name)]
             if row.empty:
                 print(f"⚠️ No schedule found for {name}")
                 continue
