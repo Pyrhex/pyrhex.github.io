@@ -253,10 +253,10 @@ def upload_invoice():
         connection = get_db_connection()
         if connection.is_connected():
             cursor = connection.cursor()
-                    cursor.execute(
-                        "INSERT INTO invoices (original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s)",
-                        (original_filename, stored_filename, current_user.id, datetime.utcnow(), paid)
-                    )
+            cursor.execute(
+                "INSERT INTO invoices (original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s)",
+                (original_filename, stored_filename, current_user.id, datetime.utcnow(), paid)
+            )
             connection.commit()
             cursor.close()
         connection.close()
