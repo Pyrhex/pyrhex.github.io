@@ -18,6 +18,7 @@ from ModMeal import _process_excel_to_rows
 import tempfile
 from pathlib import Path
 from werkzeug.utils import secure_filename
+from urllib.parse import urlparse, urljoin
 app = Flask(__name__, template_folder='.', static_folder='static')
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
@@ -85,6 +86,19 @@ def sanitize_invoice_number(invoice_number: str) -> str:
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'  # redirect here if not logged in
+
+
+def is_safe_url(target: str) -> bool:
+    if not target:
+        return False
+    reference_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return (
+        test_url.scheme in {"http", "https"}
+        and reference_url.netloc == test_url.netloc
+    )
+
+
 def get_env_var(name):
     value = os.environ.get(name)
     if not value:
@@ -158,7 +172,9 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    next_page = request.args.get('next')
     if request.method == 'POST':
+        next_page = request.form.get('next') or next_page
         username = request.form['username']
         password = request.form['password']
 
@@ -177,6 +193,8 @@ def login():
                     login_user(User(username, bool(user.get('is_admin', 0))))
                     cursor.close()
                     connection.close()
+                    if next_page and is_safe_url(next_page):
+                        return redirect(next_page)
                     return redirect(url_for('index'))
                 cursor.close()
                 connection.close()
@@ -190,7 +208,7 @@ def login():
         #     return redirect(url_for('index'))
         # return "Invalid credentials"
 
-    return render_template('login.html')
+    return render_template('login.html', next=next_page)
 
 @app.route('/schedule')
 def schedule():
