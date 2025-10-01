@@ -58,6 +58,19 @@
       padding: 28px 18px 40px;
     }
 
+    .navbar {
+      background-color: #1f1f1f;
+    }
+
+    .nav-link,
+    .navbar-brand {
+      color: #f4f4f4 !important;
+    }
+
+    .nav-link:hover {
+      color: #a1c4fd !important;
+    }
+
     .container {
       max-width: 960px;
       margin: 0 auto;
@@ -255,6 +268,7 @@
 </head>
 
 <body>
+  {% include 'partials/navbar.html' %}
   <div class="container">
     <div class="header">
       <div class="logo">MM</div>

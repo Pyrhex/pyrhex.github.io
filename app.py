@@ -49,6 +49,7 @@ def ensure_invoices_table():
                 """
                 CREATE TABLE IF NOT EXISTS invoices (
                     id INT AUTO_INCREMENT PRIMARY KEY,
+                    invoice_number VARCHAR(128),
                     original_filename VARCHAR(255) NOT NULL,
                     stored_filename VARCHAR(255) NOT NULL,
                     uploaded_by VARCHAR(255),
@@ -57,6 +58,9 @@ def ensure_invoices_table():
                 )
                 """
             )
+            cursor.execute("SHOW COLUMNS FROM invoices LIKE 'invoice_number'")
+            if not cursor.fetchone():
+                cursor.execute("ALTER TABLE invoices ADD COLUMN invoice_number VARCHAR(128)")
             connection.commit()
             cursor.close()
         connection.close()
@@ -71,6 +75,11 @@ def allowed_invoice_file(filename: str) -> bool:
 
 
 ensure_invoice_storage()
+
+
+def sanitize_invoice_number(invoice_number: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9_-]+", "-", invoice_number.strip())
+    return cleaned.strip('-_') or "invoice"
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -204,7 +213,7 @@ def invoices():
         if connection.is_connected():
             cursor = connection.cursor(dictionary=True)
             cursor.execute(
-                "SELECT id, original_filename, stored_filename, uploaded_by, upload_date, paid FROM invoices ORDER BY upload_date DESC"
+                "SELECT id, invoice_number, original_filename, stored_filename, uploaded_by, upload_date, paid FROM invoices ORDER BY upload_date DESC"
             )
             invoices = cursor.fetchall()
             cursor.close()
@@ -224,6 +233,7 @@ def upload_invoice():
         return redirect(url_for('invoices'))
     ensure_invoices_table()
     file = request.files.get('invoice_file')
+    invoice_number = request.form.get('invoice_number', '').strip()
     paid_status = request.form.get('paid_status', 'unpaid')
     paid = 1 if paid_status == 'paid' else 0
 
@@ -231,10 +241,16 @@ def upload_invoice():
         flash('Please choose an invoice to upload.', 'warning')
         return redirect(url_for('invoices'))
 
+    if not invoice_number:
+        flash('Invoice number is required.', 'warning')
+        return redirect(url_for('invoices'))
+
     if not allowed_invoice_file(file.filename):
         allowed = ", ".join(sorted(app.config['ALLOWED_INVOICE_EXTENSIONS']))
         flash(f'Unsupported file type. Allowed: {allowed}', 'warning')
         return redirect(url_for('invoices'))
+
+    sanitized_invoice_number = sanitize_invoice_number(invoice_number)
 
     timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
     original_filename = file.filename
@@ -261,11 +277,32 @@ def upload_invoice():
         if connection.is_connected():
             cursor = connection.cursor()
             cursor.execute(
-                "INSERT INTO invoices (original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s)",
-                (original_filename, temp_filename, current_user.id, datetime.utcnow(), paid)
+                "SELECT id FROM invoices WHERE invoice_number = %s",
+                (invoice_number,)
+            )
+            if cursor.fetchone():
+                cursor.close()
+                connection.close()
+                temp_path.unlink(missing_ok=True)
+                flash('Invoice number already exists. Choose a unique number.', 'warning')
+                return redirect(url_for('invoices'))
+            cursor.execute(
+                "INSERT INTO invoices (invoice_number, original_filename, stored_filename, uploaded_by, upload_date, paid) VALUES (%s, %s, %s, %s, %s, %s)",
+                (invoice_number, original_filename, temp_filename, current_user.id, datetime.utcnow(), paid)
             )
             invoice_id = cursor.lastrowid
-            final_filename = f"invoice_{invoice_id}{extension}"
+            final_filename = f"invoice_{sanitize_invoice_number(invoice_number)}{extension}"
+            cursor.execute(
+                "SELECT id FROM invoices WHERE stored_filename = %s",
+                (final_filename,)
+            )
+            if cursor.fetchone():
+                connection.rollback()
+                cursor.close()
+                connection.close()
+                temp_path.unlink(missing_ok=True)
+                flash('Invoice file name conflict. Choose a different invoice number.', 'warning')
+                return redirect(url_for('invoices'))
             final_path = app.config['INVOICE_UPLOAD_FOLDER'] / final_filename
 
             try:
@@ -370,6 +407,88 @@ def delete_invoice(invoice_id: int):
             print(f"Error deleting invoice file: {e}")
 
     flash('Invoice deleted.', 'success')
+    return redirect(url_for('invoices'))
+
+
+@app.route('/invoices/<int:invoice_id>/number', methods=['POST'])
+@login_required
+def update_invoice_number(invoice_id: int):
+    if not getattr(current_user, 'is_admin', False):
+        flash('Admin privileges required.', 'danger')
+        return redirect(url_for('invoices'))
+
+    new_number = request.form.get('invoice_number', '').strip()
+    if not new_number:
+        flash('Invoice number cannot be empty.', 'warning')
+        return redirect(url_for('invoices'))
+
+    sanitized_number = sanitize_invoice_number(new_number)
+
+    try:
+        connection = get_db_connection()
+        if connection.is_connected():
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM invoices WHERE id = %s", (invoice_id,))
+            invoice = cursor.fetchone()
+            if not invoice:
+                cursor.close()
+                connection.close()
+                flash('Invoice not found.', 'danger')
+                return redirect(url_for('invoices'))
+
+            cursor.execute(
+                "SELECT id FROM invoices WHERE invoice_number = %s AND id != %s",
+                (new_number, invoice_id)
+            )
+            if cursor.fetchone():
+                cursor.close()
+                connection.close()
+                flash('Another invoice already uses that number.', 'warning')
+                return redirect(url_for('invoices'))
+
+            current_filename = invoice['stored_filename']
+            extension = Path(current_filename).suffix
+            new_filename = f"invoice_{sanitized_number}{extension}"
+
+            cursor.execute(
+                "SELECT id FROM invoices WHERE stored_filename = %s AND id != %s",
+                (new_filename, invoice_id)
+            )
+            if cursor.fetchone():
+                cursor.close()
+                connection.close()
+                flash('File name conflict with another invoice.', 'warning')
+                return redirect(url_for('invoices'))
+
+            old_path = app.config['INVOICE_UPLOAD_FOLDER'] / current_filename
+            new_path = app.config['INVOICE_UPLOAD_FOLDER'] / new_filename
+
+            try:
+                if old_path != new_path and old_path.exists():
+                    old_path.rename(new_path)
+                elif not old_path.exists():
+                    flash('Original invoice file not found, number updated in records only.', 'warning')
+            except FileNotFoundError:
+                flash('Original invoice file not found, but number updated.', 'warning')
+            except Exception as e:
+                cursor.close()
+                connection.close()
+                flash('Could not rename invoice file.', 'danger')
+                print(f"Error renaming invoice file: {e}")
+                return redirect(url_for('invoices'))
+
+            cursor.execute(
+                "UPDATE invoices SET invoice_number = %s, stored_filename = %s WHERE id = %s",
+                (new_number, new_filename, invoice_id)
+            )
+            connection.commit()
+            cursor.close()
+        connection.close()
+        flash('Invoice number updated.', 'success')
+    except Error as e:
+        print(f"Error updating invoice number: {e}")
+        flash('Could not update invoice number.', 'danger')
+
     return redirect(url_for('invoices'))
 
 

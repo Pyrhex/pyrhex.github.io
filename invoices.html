@@ -45,23 +45,7 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-dark shadow-sm">
-    <div class="container d-flex justify-content-between w-100">
-      <div class="d-flex">
-        <a class="nav-link d-inline me-3" href="/">Home</a>
-        <a class="nav-link d-inline me-3" href="/schedule">Schedule</a>
-        <a class="nav-link d-inline me-3" href="{{ url_for('manager_meals') }}">Manager Meals</a>
-        <a class="nav-link d-inline me-3" href="{{ url_for('invoices') }}">Invoices</a>
-      </div>
-      <div>
-        {% if current_user.is_authenticated %}
-        <a class="nav-link d-inline" href="{{ url_for('logout') }}">Logout ({{ current_user.id }})</a>
-        {% else %}
-        <a class="nav-link d-inline" href="{{ url_for('login') }}">Login</a>
-        {% endif %}
-      </div>
-    </div>
-  </nav>
+  {% include 'partials/navbar.html' %}
 
   <div class="content-wrapper">
     <div class="container py-5">
@@ -84,18 +68,22 @@
         <div class="card-body">
           <h5 class="card-title mb-3">Upload Invoice</h5>
           <form action="{{ url_for('upload_invoice') }}" method="post" enctype="multipart/form-data" class="row gy-3">
+            <div class="col-md-4">
+              <label for="invoice_number" class="form-label">Invoice Number</label>
+              <input class="form-control" type="text" id="invoice_number" name="invoice_number" required>
+            </div>
             <div class="col-md-6">
               <label for="invoice_file" class="form-label">Invoice File</label>
               <input class="form-control" type="file" id="invoice_file" name="invoice_file" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label for="paid_status" class="form-label">Status</label>
               <select class="form-select" id="paid_status" name="paid_status">
                 <option value="unpaid" selected>Unpaid</option>
                 <option value="paid">Paid</option>
               </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-12 col-lg-2 d-flex align-items-end">
               <button type="submit" class="btn btn-primary w-100">Upload</button>
             </div>
           </form>
@@ -125,7 +113,7 @@
                 <tr>
                   <td>
                     <a href="{{ url_for('static', filename='invoices/' ~ invoice.stored_filename) }}" class="link-light"
-                      target="_blank" rel="noopener">Invoice #{{ invoice.id }}</a>
+                      target="_blank" rel="noopener">Invoice {{ invoice.invoice_number or ('#' ~ invoice.id) }}</a>
                   </td>
                   <td>{{ invoice.uploaded_by or '—' }}</td>
                   <td>{{ invoice.upload_date.strftime('%b %d, %Y %I:%M %p') if invoice.upload_date else '—' }}</td>
@@ -152,6 +140,14 @@
                       action="{{ url_for('delete_invoice', invoice_id=invoice.id) }}"
                       onsubmit="return confirm('Delete this invoice?');">
                       <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                    </form>
+                    <form class="d-inline ms-2" method="post"
+                      action="{{ url_for('update_invoice_number', invoice_id=invoice.id) }}">
+                      <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" name="invoice_number"
+                          value="{{ invoice.invoice_number or '' }}" placeholder="Invoice number" required>
+                        <button type="submit" class="btn btn-outline-light">Rename</button>
+                      </div>
                     </form>
                   </td>
                   {% endif %}

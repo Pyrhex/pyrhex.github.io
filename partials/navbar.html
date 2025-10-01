@@ -1,0 +1,24 @@
+<nav class="navbar navbar-dark shadow-sm">
+  <div class="container d-flex justify-content-between w-100">
+    <div class="d-flex flex-wrap">
+      <a class="nav-link d-inline me-3" href="{{ url_for('index') }}">Home</a>
+      <a class="nav-link d-inline me-3" href="{{ url_for('index') }}#about">About</a>
+      <a class="nav-link d-inline me-3" href="{{ url_for('index') }}#skills">Skills</a>
+      <a class="nav-link d-inline me-3" href="{{ url_for('index') }}#resume">Resume</a>
+      <a class="nav-link d-inline me-3" href="{{ url_for('index') }}#projects">Projects</a>
+      <a class="nav-link d-inline me-3" href="{{ url_for('schedule') }}">Schedule</a>
+      {% if current_user.is_authenticated %}
+      <a class="nav-link d-inline me-3" href="{{ url_for('invoices') }}">Invoices</a>
+      {% endif %}
+      <a class="nav-link d-inline me-3" href="{{ url_for('index') }}#contact">Contact</a>
+      <a class="nav-link d-inline me-3" href="https://media.realbrianlin.net" target="_blank" rel="noopener">Media</a>
+    </div>
+    <div>
+      {% if current_user.is_authenticated %}
+      <a class="nav-link d-inline" href="{{ url_for('logout') }}">Logout ({{ current_user.id }})</a>
+      {% else %}
+      <a class="nav-link d-inline" href="{{ url_for('login') }}">Login</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>

@@ -69,24 +69,7 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-dark shadow-sm">
-    <div class="container d-flex justify-content-between w-100">
-      <div class="d-flex">
-        <a class="nav-link d-inline me-3" href="/">Home</a>
-        <a class="nav-link d-inline me-3" href="/schedule">Schedule</a>
-        {% if current_user.is_authenticated %}
-        <a class="nav-link d-inline me-3" href="{{ url_for('invoices') }}">Invoices</a>
-        {% endif %}
-      </div>
-      <div>
-        {% if current_user.is_authenticated %}
-        <a class="nav-link d-inline" href="{{ url_for('logout') }}">Logout ({{ current_user.id }})</a>
-        {% else %}
-        <a class="nav-link d-inline" href="{{ url_for('login') }}">Login</a>
-        {% endif %}
-      </div>
-    </div>
-  </nav>
+  {% include 'partials/navbar.html' %}
 
   <div class="container flex-grow-1 d-flex align-items-center justify-content-center py-5">
     <div class="card p-4 shadow-lg" style="width: 100%; max-width: 420px;">
