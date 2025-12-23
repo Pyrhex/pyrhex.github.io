@@ -11,7 +11,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 vancouver_tz = pytz.timezone('America/Vancouver')
-names = ["Brian", "Abdi*", "Emilyn*", "Ryan*", "Jordan", "Cindy*", "KC", "Jojo*", "Christian*", "Troy*", "Tristan*", "Ian", "Sara", "Terry"]
+names = ["Brian", "Abdi*", "Emilyn*", "Ryan*", "Jordan", "Cindy*", "KC", "Jojo*", "Christian*", "Troy*", "Tristan*", "Ian", "Sara", "Terry", "Sato"]
 color_codes = {
     "Brian": 1,
     "Abdi*": 2,
@@ -27,7 +27,8 @@ color_codes = {
     "Ian": 1,
     "Work": 6,
     "Sara": 1,
-    "Terry": 5
+    "Terry": 5,
+    "Sato": 8
 }
 
 def remove_end_star(name: str) -> str:
