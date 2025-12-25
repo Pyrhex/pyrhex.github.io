@@ -79,6 +79,17 @@
       margin: 0 15px;
       color: #a1c4fd;
     }
+
+    #apps .card {
+      background-color: #1f1f1f;
+      color: #f4f4f4;
+      border: 1px solid #333;
+    }
+
+    #apps .btn {
+      background-color: #6200ea;
+      border: none;
+    }
   </style>
 </head>
 
@@ -92,6 +103,9 @@
         <a class="nav-link d-inline me-3" href="#skills">Skills</a>
         <a class="nav-link d-inline me-3" href="#resume">Resume</a>
         <a class="nav-link d-inline me-3" href="#projects">Projects</a>
+        {% if current_user.is_authenticated %}
+        <a class="nav-link d-inline me-3" href="#apps">Apps</a>
+        {% endif %}
         <a class="nav-link d-inline me-3" href="/schedule">Schedule</a>
         <a class="nav-link d-inline me-3" href="#contact">Contact</a>
         <a class="nav-link d-inline me-3" href="https://media.realbrianlin.net" target="_blank">Media</a>
@@ -153,6 +167,34 @@
     <a href="#projects" class="btn btn-circle projects">Projects</a>
     <a href="#contact" class="btn btn-circle contact">Contact</a>
   </div>
+
+  <!-- Apps -->
+  {% if current_user.is_authenticated and registered_apps %}
+  <div id="apps" class="container mt-5">
+    <h2 class="fw-bold mb-3 text-center">Web Apps</h2>
+    <p class="text-center text-muted mb-4">These tools are hosted directly on this site. Add new Flask apps under
+      <code>apps/</code> and they will appear here automatically.</p>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      {% for external_app in registered_apps %}
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ external_app.name }}</h5>
+            <p class="card-text flex-grow-1">{{ external_app.description }}</p>
+            <a href="{{ external_app.url }}" class="btn btn-primary mt-3"
+              target="{{ '_blank' if external_app.open_in_new_tab else '_self' }}">Launch</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% elif not current_user.is_authenticated %}
+  <div id="apps" class="container mt-5">
+    <h2 class="fw-bold mb-3 text-center">Web Apps</h2>
+    <p class="text-center text-muted">Please <a href="{{ url_for('login') }}">log in</a> to access your tools.</p>
+  </div>
+  {% endif %}
 
   <!-- Footer Contact -->
   <footer id="contact" class="mt-5 py-4 bg-dark text-center text-light">

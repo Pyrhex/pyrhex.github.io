@@ -4,10 +4,149 @@ import bcrypt
 import mysql.connector
 from mysql.connector import Error
 import os
+import re
+import sys
+from pathlib import Path
+import importlib
+import importlib.util
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 app = Flask(__name__, template_folder='.', static_folder='static')
 
 app.secret_key = 'supersecretkey'  # Needed for session management
+APPS_DIR = Path(__file__).resolve().parent / 'apps'
+registered_apps = []
+
+
+class LoginGuardMiddleware:
+    """Protect mounted /apps/* routes so only authenticated users can access them."""
+
+    def __init__(self, flask_app, wrapped_app, protected_prefix='/apps'):
+        self._flask_app = flask_app
+        self._wrapped_app = wrapped_app
+        self._prefix = protected_prefix.rstrip('/') or '/'
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        if path and (path == self._prefix or path.startswith(f'{self._prefix}/')):
+            with self._flask_app.request_context(environ):
+                if not current_user.is_authenticated:
+                    next_path = path or '/'
+                    query = environ.get('QUERY_STRING')
+                    if query:
+                        next_path = f'{next_path}?{query}'
+                    resp = redirect(url_for('login', next=next_path))
+                    return resp(environ, start_response)
+        return self._wrapped_app(environ, start_response)
+
+
+def _sanitize_module_name(name: str) -> str:
+    sanitized = re.sub(r'[^0-9a-zA-Z_]', '_', name)
+    return sanitized or 'embedded_app'
+
+
+def _friendly_name(raw: str) -> str:
+    return re.sub(r'[_-]+', ' ', raw).title()
+
+
+def _load_module_from_path(module_name: str, file_path: Path):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if not spec or not spec.loader:
+        raise ImportError(f'Cannot load module from {file_path}')
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_app_module(entry: Path):
+    if entry.is_dir():
+        init_file = entry / '__init__.py'
+        if init_file.exists():
+            try:
+                return importlib.import_module(f'apps.{entry.name}')
+            except ModuleNotFoundError:
+                pass
+        app_file = entry / 'app.py'
+        if app_file.exists():
+            module_name = f'apps.dynamic_{_sanitize_module_name(entry.name)}'
+            sys_path = str(entry.resolve())
+            if sys_path not in sys.path:
+                sys.path.insert(0, sys_path)
+            return _load_module_from_path(module_name, app_file)
+    elif entry.is_file() and entry.suffix == '.py':
+        module_name = f'apps.dynamic_{_sanitize_module_name(entry.stem)}'
+        sys_path = str(entry.parent.resolve())
+        if sys_path not in sys.path:
+            sys.path.insert(0, sys_path)
+        return _load_module_from_path(module_name, entry)
+    return None
+
+
+def _ensure_trailing_slash(url: str) -> str:
+    return url if url.endswith('/') else f'{url}/'
+
+
+def discover_and_register_apps(flask_app):
+    """Auto-discover Flask blueprints inside the apps/ directory."""
+    if not APPS_DIR.exists():
+        return
+
+    mounted_apps = {}
+    for entry in sorted(APPS_DIR.iterdir(), key=lambda p: p.name.lower()):
+        if entry.name.startswith('__'):
+            continue
+
+        module = None
+        try:
+            module = _load_app_module(entry)
+        except Exception as exc:  # pragma: no cover - logged for debugging
+            print(f'Could not import app module {entry.name}: {exc}')
+            continue
+
+        if not module:
+            continue
+
+        blueprint = getattr(module, 'app_blueprint', None)
+        metadata = getattr(module, 'app_meta', None)
+        app_factory = getattr(module, 'create_app', None)
+        if not blueprint:
+            if callable(app_factory):
+                metadata = metadata or {}
+                metadata.setdefault('name', _friendly_name(entry.name))
+                metadata.setdefault('description', 'Custom Flask app')
+                mount_path = metadata.get('mount_path') or metadata.get('url_prefix') or f'/apps/{entry.name}'
+                mount_path = '/' + mount_path.strip('/')
+                metadata.setdefault('url', _ensure_trailing_slash(mount_path))
+                sub_app = app_factory()
+                mounted_apps[mount_path.rstrip('/')] = sub_app
+                registered_apps.append(metadata)
+            continue
+
+        flask_app.register_blueprint(blueprint)
+
+        metadata = metadata or {}
+        metadata.setdefault('name', _friendly_name(entry.name))
+        metadata.setdefault('description', 'Custom Flask app')
+        url_prefix = getattr(blueprint, 'url_prefix', f'/apps/{entry.name}')
+        url_prefix = url_prefix if url_prefix.startswith('/') else f'/{url_prefix}'
+        metadata.setdefault('url', _ensure_trailing_slash(url_prefix))
+        registered_apps.append(metadata)
+
+    wrapped_wsgi = flask_app.wsgi_app
+    if mounted_apps:
+        wrapped_wsgi = DispatcherMiddleware(flask_app.wsgi_app, mounted_apps)
+
+    flask_app.wsgi_app = LoginGuardMiddleware(flask_app, wrapped_wsgi, '/apps')
+
+
+discover_and_register_apps(app)
+
+
+@app.context_processor
+def inject_registered_apps():
+    apps_visible = registered_apps if current_user.is_authenticated else []
+    return {'registered_apps': apps_visible}
 
 # Flask-Login setup
 login_manager = LoginManager()
