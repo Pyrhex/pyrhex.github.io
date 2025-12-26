@@ -194,6 +194,12 @@
     <h2 class="fw-bold mb-3 text-center">Web Apps</h2>
     <p class="text-center text-muted">Please <a href="{{ url_for('login') }}">log in</a> to access your tools.</p>
   </div>
+  {% else %}
+  <div id="apps" class="container mt-5">
+    <h2 class="fw-bold mb-3 text-center">Web Apps</h2>
+    <p class="text-center text-muted">No apps are available right now. Drop a Flask app into <code>apps/</code> and
+      restart the server.</p>
+  </div>
   {% endif %}
 
   <!-- Footer Contact -->
