@@ -20,6 +20,14 @@
                 <input name="amount" type="number" min="0" step="0.01" required>
             </label>
             <label>
+                Payment Method
+                <select name="payment_method" required>
+                    <option value="" disabled selected>Select method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                </select>
+            </label>
+            <label>
                 Date
                 <input name="date" type="date" required>
             </label>
@@ -46,7 +54,6 @@
                     <option value="Cash">Cash</option>
                     <option value="E-transfer">E-transfer</option>
                     <option value="Gift Card">Gift Card</option>
-                    <option value="On The House">On The House</option>
                 </select>
             </label>
             <label>

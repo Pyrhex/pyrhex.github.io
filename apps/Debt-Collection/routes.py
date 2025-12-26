@@ -122,6 +122,12 @@ def _build_transaction_payload(data: Dict[str, str]) -> Dict[str, str | float]:
     description = (data.get("transaction_name") or "").strip()
     if not description:
         abort(400, "Description is required.")
+    method = (data.get("payment_method") or "").strip()
+    if not method:
+        abort(400, "Payment method is required.")
+    normalized_method = method.title()
+    if normalized_method not in {"Cash", "Card"}:
+        abort(400, "Payment method must be Cash or Card.")
     try:
         amount = _coerce_amount(data.get("amount"))
     except ValueError as exc:
@@ -131,7 +137,7 @@ def _build_transaction_payload(data: Dict[str, str]) -> Dict[str, str | float]:
         "person_name": person_name,
         "transaction_name": description,
         "amount": amount,
-        "payment_method": data.get("payment_method") or "Covered",
+        "payment_method": normalized_method,
         "date": _default_date(data.get("date")),
         "notes": (data.get("notes") or "").strip() or None,
     }
