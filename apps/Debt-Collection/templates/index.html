@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="summary">
+    <h2>{{ person_name }}'s Balance</h2>
+    <p class="total">Outstanding balance: <strong id="current-balance">${{ '%.2f'|format(initial_balance) }}</strong></p>
+    <p class="note">Transactions represent expenses you covered; payments reflect money returned.</p>
+</section>
+
+<section class="forms">
+    <article class="card">
+        <h3>Add Transaction for {{ person_name }}</h3>
+        <form id="transaction-form" data-endpoint="{{ url_for('main.api_add_transaction') }}">
+            <label>
+                Description
+                <input name="transaction_name" required>
+            </label>
+            <label>
+                Amount
+                <input name="amount" type="number" min="0" step="0.01" required>
+            </label>
+            <label>
+                Date
+                <input name="date" type="date" required>
+            </label>
+            <label>
+                Notes
+                <textarea name="notes" rows="2" placeholder="Optional details"></textarea>
+            </label>
+            <button type="submit">Record Transaction</button>
+            <p class="form-status" hidden></p>
+        </form>
+    </article>
+
+    <article class="card">
+        <h3>Add Payment from {{ person_name }}</h3>
+        <form id="payment-form" data-endpoint="{{ url_for('main.api_add_payment') }}">
+            <label>
+                Amount
+                <input name="amount" type="number" min="0" step="0.01" required>
+            </label>
+            <label>
+                Payment Method
+                <select name="payment_method" required>
+                    <option value="" disabled selected>Select method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="E-transfer">E-transfer</option>
+                    <option value="Gift Card">Gift Card</option>
+                    <option value="On The House">On The House</option>
+                </select>
+            </label>
+            <label>
+                Date
+                <input name="date" type="date" required>
+            </label>
+            <label>
+                Notes
+                <textarea name="notes" rows="2" placeholder="Optional details"></textarea>
+            </label>
+            <button type="submit">Record Payment</button>
+            <p class="form-status" hidden></p>
+        </form>
+    </article>
+</section>
+
+<section class="ledger">
+    <p class="balance-display">Current Balance: <strong id="person-balance">${{ '%.2f'|format(initial_balance) }}</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="activity-body">
+            <tr>
+                <td colspan="6">No activity yet.</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+{% endblock %}
