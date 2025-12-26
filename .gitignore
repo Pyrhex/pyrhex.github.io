@@ -3,4 +3,4 @@
 *.pdf
 *.xlsx
 .env
-.json
+*.json
