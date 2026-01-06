@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash, abort
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import bcrypt
 import mysql.connector
@@ -7,16 +7,22 @@ import os
 import re
 import sys
 from pathlib import Path
-import importlib
 import importlib.util
+import importlib
 import pandas as pd
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from werkzeug.utils import secure_filename
+import uuid
 
 app = Flask(__name__, template_folder='.', static_folder='static')
 
 app.secret_key = 'supersecretkey'  # Needed for session management
 APPS_DIR = Path(__file__).resolve().parent / 'apps'
 registered_apps = []
+INVOICE_UPLOAD_FOLDER = Path(app.static_folder) / 'invoices'
+INVOICE_UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+ALLOWED_INVOICE_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
+app.config['INVOICE_UPLOAD_FOLDER'] = str(INVOICE_UPLOAD_FOLDER)
 
 
 class LoginGuardMiddleware:
@@ -153,6 +159,28 @@ def inject_registered_apps():
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'  # redirect here if not logged in
+
+
+def get_db_connection():
+    """Create a MySQL connection using the configured credentials."""
+    try:
+        connection = mysql.connector.connect(
+            host=os.environ.get('DB_HOST'),
+            database='website',
+            user=os.environ.get('DB_USER'),
+            password=os.environ.get('DB_PASSWORD')
+        )
+        if connection.is_connected():
+            return connection
+    except Error as e:
+        print(f"Error: {e}")
+    return None
+
+
+def _allowed_invoice_file(filename: str) -> bool:
+    return bool(filename) and '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_INVOICE_EXTENSIONS
+
+
 def get_env_var(name):
     value = os.environ.get(name)
     if not value:
@@ -288,6 +316,130 @@ def register():
             print(f"Error: {e}")
     
     return render_template('register.html')
+
+
+@app.route('/invoices')
+@login_required
+def invoices():
+    invoices = []
+    connection = get_db_connection()
+    cursor = None
+    if connection:
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                """
+                SELECT id, invoice_number, client_name, amount, status, file_path, uploaded_by
+                FROM invoices
+                ORDER BY id DESC
+                """
+            )
+            invoices = cursor.fetchall()
+        except Error as e:
+            print(f"Error: {e}")
+        finally:
+            if cursor:
+                cursor.close()
+            connection.close()
+    else:
+        flash('Unable to load invoices right now. Please try again later.', 'danger')
+    can_manage = current_user.id == 'brian'
+    return render_template('invoices.html', invoices=invoices, can_manage=can_manage)
+
+
+@app.route('/invoices/upload', methods=['POST'])
+@login_required
+def upload_invoice():
+    if current_user.id != 'brian':
+        abort(403)
+
+    client_name = request.form.get('client_name', '').strip()
+    invoice_number = request.form.get('invoice_number', '').strip()
+    raw_amount = request.form.get('amount', '').strip()
+    invoice_file = request.files.get('invoice_file')
+
+    if not all([client_name, invoice_number, raw_amount, invoice_file]):
+        flash('Client, invoice number, amount, and the file are required.', 'danger')
+        return redirect(url_for('invoices'))
+
+    if not _allowed_invoice_file(invoice_file.filename):
+        flash('Unsupported invoice file type.', 'danger')
+        return redirect(url_for('invoices'))
+
+    try:
+        amount_value = round(float(raw_amount), 2)
+    except ValueError:
+        flash('Amount must be a number.', 'danger')
+        return redirect(url_for('invoices'))
+
+    sanitized_name = secure_filename(invoice_file.filename)
+    if not sanitized_name:
+        flash('Invalid invoice file name.', 'danger')
+        return redirect(url_for('invoices'))
+    unique_name = f"{uuid.uuid4().hex}_{sanitized_name}"
+    stored_path = f"invoices/{unique_name}"
+    save_path = INVOICE_UPLOAD_FOLDER / unique_name
+
+    connection = get_db_connection()
+    if not connection:
+        flash('Unable to connect to the database.', 'danger')
+        return redirect(url_for('invoices'))
+
+    cursor = None
+    try:
+        invoice_file.save(save_path)
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO invoices (invoice_number, client_name, amount, status, file_path, uploaded_by)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (invoice_number, client_name, amount_value, 'pending', stored_path, current_user.id)
+        )
+        connection.commit()
+        flash('Invoice uploaded.', 'success')
+    except Error as e:
+        print(f"Error: {e}")
+        if save_path.exists():
+            save_path.unlink()
+        flash('Unable to save the invoice.', 'danger')
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+    return redirect(url_for('invoices'))
+
+
+@app.route('/invoices/<int:invoice_id>/mark-paid', methods=['POST'])
+@login_required
+def mark_invoice_paid(invoice_id):
+    if current_user.id != 'brian':
+        abort(403)
+
+    connection = get_db_connection()
+    if not connection:
+        flash('Unable to connect to the database.', 'danger')
+        return redirect(url_for('invoices'))
+
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute("UPDATE invoices SET status = 'paid' WHERE id = %s", (invoice_id,))
+        if cursor.rowcount:
+            connection.commit()
+            flash('Invoice marked as paid.', 'success')
+        else:
+            flash('Invoice not found.', 'warning')
+    except Error as e:
+        print(f"Error: {e}")
+        flash('Unable to update invoice status.', 'danger')
+    finally:
+        if cursor:
+            cursor.close()
+        connection.close()
+
+    return redirect(url_for('invoices'))
 
 if __name__ == '__main__':
     app.run(host="127.0.0.1", port=5000)
