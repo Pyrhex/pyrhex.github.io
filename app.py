@@ -329,7 +329,7 @@ def invoices():
             cursor = connection.cursor(dictionary=True)
             cursor.execute(
                 """
-                SELECT id, invoice_number, client_name, amount, status, file_path, uploaded_by
+                SELECT id, invoice_number, client_name, status, file_path, uploaded_by
                 FROM invoices
                 ORDER BY id DESC
                 """
@@ -355,21 +355,14 @@ def upload_invoice():
 
     client_name = request.form.get('client_name', '').strip()
     invoice_number = request.form.get('invoice_number', '').strip()
-    raw_amount = request.form.get('amount', '').strip()
     invoice_file = request.files.get('invoice_file')
 
-    if not all([client_name, invoice_number, raw_amount, invoice_file]):
-        flash('Client, invoice number, amount, and the file are required.', 'danger')
+    if not all([client_name, invoice_number, invoice_file]):
+        flash('Client, invoice number, and the file are required.', 'danger')
         return redirect(url_for('invoices'))
 
     if not _allowed_invoice_file(invoice_file.filename):
         flash('Unsupported invoice file type.', 'danger')
-        return redirect(url_for('invoices'))
-
-    try:
-        amount_value = round(float(raw_amount), 2)
-    except ValueError:
-        flash('Amount must be a number.', 'danger')
         return redirect(url_for('invoices'))
 
     sanitized_name = secure_filename(invoice_file.filename)
@@ -391,10 +384,10 @@ def upload_invoice():
         cursor = connection.cursor()
         cursor.execute(
             """
-            INSERT INTO invoices (invoice_number, client_name, amount, status, file_path, uploaded_by)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO invoices (invoice_number, client_name, status, file_path, uploaded_by)
+            VALUES (%s, %s, %s, %s, %s)
             """,
-            (invoice_number, client_name, amount_value, 'pending', stored_path, current_user.id)
+            (invoice_number, client_name, 'pending', stored_path, current_user.id)
         )
         connection.commit()
         flash('Invoice uploaded.', 'success')

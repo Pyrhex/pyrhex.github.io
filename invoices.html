@@ -87,7 +87,6 @@
                   <tr>
                     <th scope="col">Invoice #</th>
                     <th scope="col">Client</th>
-                    <th scope="col">Amount</th>
                     <th scope="col">Status</th>
                     <th scope="col">File</th>
                     <th scope="col">Uploaded By</th>
@@ -101,7 +100,6 @@
                   <tr>
                     <td>{{ invoice.invoice_number }}</td>
                     <td>{{ invoice.client_name }}</td>
-                    <td>${{ '{:,.2f}'.format(invoice.amount or 0) }}</td>
                     <td>
                       {% if invoice.status == 'paid' %}
                       <span class="badge badge-paid">Paid</span>
@@ -153,13 +151,6 @@
               <div class="col-md-4">
                 <label class="form-label" for="client_name">Client</label>
                 <input class="form-control" type="text" name="client_name" id="client_name" required>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label" for="amount">Amount</label>
-                <div class="input-group">
-                  <span class="input-group-text">$</span>
-                  <input class="form-control" type="number" step="0.01" min="0" name="amount" id="amount" required>
-                </div>
               </div>
               <div class="col-12">
                 <label class="form-label" for="invoice_file">Invoice File (PDF/JPG/PNG)</label>
